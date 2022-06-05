@@ -34,11 +34,11 @@ function source.new()
 end
 
 function source.is_dap_buffer(bufnr)
-  local buf_name = vim.fn.bufname(bufnr or 0)
-  if vim.startswith(buf_name, "DAP ") then
+  local filetype = vim.api.nvim_buf_get_option(bufnr or 0, "filetype")
+  if vim.startswith(filetype, "dapui_") then
     return true
   end
-  if buf_name == "[dap-repl]" then
+  if filetype == "dap-repl" then
     return true
   end
 
