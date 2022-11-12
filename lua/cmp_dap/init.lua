@@ -118,6 +118,23 @@ function source:resolve(completion_item, callback)
   callback(completion_item)
 end
 
+---Get trigger characters. (Optional)
+---@return string[]
+function source:get_trigger_characters()
+  local session = require('dap').session()
+  local trigger_characters = session.capabilities.completionTriggerCharacters or {}
+  local contains_dot = false
+  for _, trigger_character in ipairs(trigger_characters) do
+      if trigger_character == '.' then
+        contains_dot = true
+      end
+  end
+  if not contains_dot then
+    table.insert(trigger_characters, '.') -- always add '.' as nvim-dap adds custom commands starting with .
+  end
+  return trigger_characters
+end
+
 ---Execute command after item was accepted.
 ---@param completion_item lsp.CompletionItem
 ---@param callback fun(completion_item: lsp.CompletionItem|nil)
