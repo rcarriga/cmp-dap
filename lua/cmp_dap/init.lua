@@ -73,7 +73,7 @@ end
 ---@param _ cmp.SourceCompletionApiParams
 ---@param callback fun(response: lsp.CompletionResponse|nil)
 function source:complete(_, callback)
-  local session = dap.session()
+  local session = assert(dap.session())
 
   local col = api.nvim_win_get_cursor(0)[2]
   local line = api.nvim_get_current_line()
@@ -81,16 +81,28 @@ function source:complete(_, callback)
   local offset = vim.startswith(line, "dap> ") and 5 or 0
   local typed = line:sub(offset + 1, col)
 
+  ---@type lsp.CompletionItem[]
   local completions = {}
+  local _add = function(val)
+    table.insert(completions, { insertText = val, label = val, kind = kinds.Keyword })
+  end
+
+  -- REPL Commands (including custom commands)
   if vim.startswith(typed, ".") then
     for _, values in pairs(dap_repl.commands) do
-      for _, val in pairs(values) do
-        if vim.startswith(val, typed) then
-          table.insert(completions, { insertText = val, label = val, kind = kinds.Keyword })
+      for _, directive in pairs(values) do
+        if type(directive) == "string" and vim.startswith(directive, typed) then
+          _add(directive)
         end
       end
     end
+    for command, _ in pairs(dap_repl.commands.custom_commands or {}) do
+      if vim.startswith(command, typed) then
+        _add(command)
+      end
+    end
   end
+
   session:request("completions", {
     frameId = (session.current_frame or {}).id,
     text = typed,
